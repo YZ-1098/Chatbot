@@ -1,1 +1,4 @@
-testing1223344321
+numpy
+scipy
+scikit-learn
+streamlit
