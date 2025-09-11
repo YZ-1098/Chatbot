@@ -3,12 +3,17 @@ import pickle
 import numpy as np
 import time
 import datetime
+import os
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Load retrieval artifacts
-vectorizer = pickle.load(open("tfidf_vectorizer.pkl", "rb"))
-qa_matrix = pickle.load(open("qa_matrix.pkl", "rb"))
-answers = pickle.load(open("qa_answers.pkl", "rb"))
+# Load retrieval artifacts (resolve relative to this file's directory)
+BASE_DIR = os.path.dirname(__file__)
+with open(os.path.join(BASE_DIR, "tfidf_vectorizer.pkl"), "rb") as f:
+    vectorizer = pickle.load(f)
+with open(os.path.join(BASE_DIR, "qa_matrix.pkl"), "rb") as f:
+    qa_matrix = pickle.load(f)
+with open(os.path.join(BASE_DIR, "qa_answers.pkl"), "rb") as f:
+    answers = pickle.load(f)
 
 
 def retrieve_answer(user_text: str, top_k: int = 1, threshold: float = 0.35):
