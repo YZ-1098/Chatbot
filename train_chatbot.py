@@ -3,7 +3,6 @@ import pickle
 import os
 from typing import List, Tuple
 
-import nltk
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -47,7 +46,6 @@ def save_artifacts(vectorizer, question_matrix, answers: List[str], out_dir: str
 
 
 if __name__ == "__main__":
-    nltk.download('punkt', quiet=True)
 
     csv_path = "Conversation.csv"
     if not os.path.exists(csv_path):

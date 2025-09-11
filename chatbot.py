@@ -1,7 +1,6 @@
 import random
 import pickle
 import numpy as np
-import nltk
 import time
 import datetime
 from sklearn.metrics.pairwise import cosine_similarity
