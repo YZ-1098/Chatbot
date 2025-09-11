@@ -1,18 +1,19 @@
 import csv
 import pickle
 import os
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 
-def read_conversation_csv(csv_path: str) -> Tuple[List[str], List[str]]:
+def read_conversation_csv(csv_path: str) -> Tuple[List[str], List[str], Optional[List[str]]]:
     questions: List[str] = []
     answers: List[str] = []
+    categories: List[str] = []
     with open(csv_path, newline='', encoding='utf-8') as f:
         reader = csv.DictReader(f)
-        # Expecting columns: question, answer
+        # Expecting columns: question, answer, [optional] category
         for row in reader:
             q = (row.get('question') or '').strip()
             a = (row.get('answer') or '').strip()
@@ -20,9 +21,12 @@ def read_conversation_csv(csv_path: str) -> Tuple[List[str], List[str]]:
                 continue
             questions.append(q)
             answers.append(a)
+            cat = (row.get('category') or '').strip()
+            categories.append(cat if cat else '')
     if not questions:
         raise ValueError("No question/answer rows found in Conversation.csv")
-    return questions, answers
+    # Return categories only if at least one non-empty exists
+    return questions, answers, (categories if any(categories) else None)
 
 
 def train_retriever(questions: List[str]):
@@ -35,7 +39,7 @@ def train_retriever(questions: List[str]):
     return vectorizer, question_matrix
 
 
-def save_artifacts(vectorizer, question_matrix, answers: List[str], out_dir: str = "."):
+def save_artifacts(vectorizer, question_matrix, answers: List[str], questions: List[str], categories: Optional[List[str]], out_dir: str = "."):
     with open(os.path.join(out_dir, "tfidf_vectorizer.pkl"), "wb") as f:
         pickle.dump(vectorizer, f)
     with open(os.path.join(out_dir, "qa_answers.pkl"), "wb") as f:
@@ -43,6 +47,12 @@ def save_artifacts(vectorizer, question_matrix, answers: List[str], out_dir: str
     # Pickle sparse matrix (requires scipy in sklearn deps, safe to pickle)
     with open(os.path.join(out_dir, "qa_matrix.pkl"), "wb") as f:
         pickle.dump(question_matrix, f)
+    # Also save questions for display and optional categories for filtering
+    with open(os.path.join(out_dir, "qa_questions.pkl"), "wb") as f:
+        pickle.dump(questions, f)
+    if categories is not None:
+        with open(os.path.join(out_dir, "qa_categories.pkl"), "wb") as f:
+            pickle.dump(categories, f)
 
 
 if __name__ == "__main__":
@@ -56,7 +66,8 @@ if __name__ == "__main__":
         else:
             raise FileNotFoundError("Conversation.csv not found in project root")
 
-    questions, answers = read_conversation_csv(csv_path)
+    questions, answers, categories = read_conversation_csv(csv_path)
     vectorizer, question_matrix = train_retriever(questions)
-    save_artifacts(vectorizer, question_matrix, answers)
-    print(f"Trained retrieval model on {len(questions)} Q/A pairs and saved artifacts.")
+    save_artifacts(vectorizer, question_matrix, answers, questions, categories)
+    extra = " with categories" if categories is not None else ""
+    print(f"Trained retrieval model on {len(questions)} Q/A pairs{extra} and saved artifacts.")
