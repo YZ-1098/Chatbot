@@ -286,7 +286,7 @@
        "fees for non-Ac room for boys"
     ],
     "responses": [
-       "For Fee detail visit <a target=\"_blank\" href=\"https://university.edu.my/fees\"> here</a>"
+       "For Fee detail visit https://university.edu.my/fees"
     ],
     "extension":  {
         "function": "",
@@ -320,7 +320,7 @@
        "location"
     ],
     "responses": [
-       "<a target=\"_blank\" href=\"https://university.edu.my/location\"> here</a>"
+       "https://university.edu.my/location"
     ],
     "extension":  {
         "function": "",
@@ -362,7 +362,7 @@
        "distance between hostel and college"
     ],
     "responses": [
-       "For hostel detail visit <a target=\"_blank\" href=\"https://university.edu.my/hostel\"> here</a>"
+       "For hostel detail visit https://university.edu.my/hostel"
     ],
     "extension":  {
         "function": "",
@@ -393,7 +393,7 @@
        "what about events"
     ],
     "responses": [
-       "For event detail visit <a target=\"_blank\" href=\"https://university.edu.my/events\"> here</a>"
+       "For event detail visit https://university.edu.my/events"
     ],
     "extension":  {
         "function": "",
@@ -426,7 +426,7 @@
        "documents needed"
     ],
     "responses": [
-       "To know more about document required visit <a target=\"_blank\" href=\"https://university.edu.my/admissions/documents\"> here</a>"
+       "To know more about document required visit https://university.edu.my/admissions/documents"
     ],
     "extension":  {
         "function": "",
@@ -480,7 +480,7 @@
        "What is next lecture"
     ],
     "responses": [
-       "Timetable provide direct to the students OR To know about syllabus visit <a target=\"_blank\" href=\"https://university.edu.my/timetable\"> here</a>"
+       "Timetable provide direct to the students OR To know about syllabus visit https://university.edu.my/timetable"
     ],
     "extension":  {
         "function": "",
@@ -514,7 +514,7 @@
        "how many libraries"
     ],
     "responses": [
-       "There is one huge and spacious library.timings are 8am to 6pm and for more visit <a target=\"blank\" href=\"https://university.edu.my/library\">here</a>"
+       "There is one huge and spacious library. Timings are 8am to 6pm. For more visit https://university.edu.my/library"
     ],
     "extension":  {
         "function": "",
@@ -624,7 +624,7 @@
        "companies"
     ],
     "responses": [
-       "To know about placement visit <a target=\"_blank\" href=\"https://university.edu.my/placements\">here</a>"
+       "To know about placement visit https://university.edu.my/placements"
     ],
     "extension":  {
         "function": "",
@@ -826,7 +826,7 @@
        "fourth year scholarship"
     ],
     "responses": [
-       "Many government scholarships are supported by our university. For details and updates visit <a target=\"_blank\" href=\"https://university.edu.my/scholarships\">here</a>"
+       "Many government scholarships are supported by our university. For details and updates visit https://university.edu.my/scholarships"
     ],
     "extension":  {
         "function": "",
@@ -1047,7 +1047,7 @@
        "please provide sports and games information"
     ],
     "responses": [
-       "Our university encourages all-round development of students and hence provides sports facilities in the campus. For more details visit <a target=\"_blank\" href=\"https://university.edu.my/sports\">here</a>"
+       "Our university encourages all-round development of students and hence provides sports facilities in the campus. For more details visit https://university.edu.my/sports"
     ],
     "extension":  {
         "function": "",
@@ -1188,7 +1188,7 @@
        "Academic Calander"
     ],
     "responses": [
-       "Timetable Link visit <a target=\"_blank\" href=\"https://university.edu.my/timetable\"> here</a>"
+        "Timetable Link visit https://university.edu.my/timetable"
     ],
     "extension":  {
         "function": "",
