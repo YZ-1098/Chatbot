@@ -1,5 +1,5 @@
 import os
-import csv
+import json
 import pickle
 from typing import List, Tuple
 
@@ -19,20 +19,29 @@ except Exception:
     rouge_scorer = None  # type: ignore
 
 
-def read_conversation_csv(csv_path: str) -> Tuple[List[str], List[str]]:
+# CSV path removed from the project; evaluation now uses intents.json only
+
+
+def read_intents_json(json_path: str) -> Tuple[List[str], List[str]]:
     questions: List[str] = []
     answers: List[str] = []
-    with open(csv_path, newline='', encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            q = (row.get('question') or '').strip()
-            a = (row.get('answer') or '').strip()
-            if not q or not a:
+    with open(json_path, encoding='utf-8') as f:
+        data = json.load(f)
+    intents = data.get('intents') or []
+    for item in intents:
+        texts = item.get('text') or []
+        responses = item.get('responses') or []
+        if not texts or not responses:
+            continue
+        canonical_answer = str(responses[0]).strip()
+        for t in texts:
+            q = str(t).strip()
+            if not q:
                 continue
             questions.append(q)
-            answers.append(a)
+            answers.append(canonical_answer)
     if not questions:
-        raise ValueError("No question/answer rows found in Conversation.csv")
+        raise ValueError("No usable entries found in intents.json")
     return questions, answers
 
 
@@ -142,8 +151,8 @@ def evaluate_generation(
 
 def main():
     base_dir = os.path.dirname(__file__)
-    csv_path = os.path.join(base_dir, "Conversation.csv")
-    questions, gold_answers = read_conversation_csv(csv_path)
+    questions, gold_answers = read_intents_json(os.path.join(base_dir, "intents.json"))
+    print(f"Evaluating on {len(questions)} items from intents.json")
 
     vectorizer, qa_matrix, answers = load_artifacts(base_dir)
 

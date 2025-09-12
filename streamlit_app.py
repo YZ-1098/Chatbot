@@ -40,10 +40,10 @@ def retrieve_top_k(user_text: str, vectorizer, qa_matrix, answers: List[str], to
     return results
 
 
-st.set_page_config(page_title="CSV Chatbot", page_icon="💬", layout="centered")
+st.set_page_config(page_title="FAQ Chatbot", page_icon="💬", layout="centered")
 
 st.title("💬 FAQ Chatbot")
-st.caption("TF‑IDF retrieval over your FAQ CSV (question, answer, optional category)")
+st.caption("TF‑IDF retrieval over intents.json (intent texts as questions, response as answer)")
 
 vectorizer, qa_matrix, answers, questions, categories = load_artifacts()
 
@@ -52,39 +52,6 @@ with st.sidebar:
     threshold = st.slider("Match threshold", 0.0, 1.0, 0.35, 0.01)
     top_k = st.slider("Show top‑k matches", 1, 5, 3, 1)
     show_candidates = st.checkbox("Show candidates", value=False)
-    st.markdown("---")
-    st.subheader("Upload new FAQ CSV")
-    uploaded = st.file_uploader("CSV with columns: question, answer, [category]", type=["csv"], accept_multiple_files=False)
-    if uploaded is not None:
-        # Session-only retrain using uploaded CSV
-        import csv as _csv
-        from io import StringIO
-        # Read rows
-        decoded = uploaded.getvalue().decode("utf-8", errors="ignore")
-        reader = _csv.DictReader(StringIO(decoded))
-        qs: List[str] = []
-        ans: List[str] = []
-        cats: List[str] = []
-        for row in reader:
-            q = (row.get('question') or '').strip()
-            a = (row.get('answer') or '').strip()
-            if not q or not a:
-                continue
-            qs.append(q)
-            ans.append(a)
-            c = (row.get('category') or '').strip()
-            cats.append(c if c else '')
-        if qs:
-            from sklearn.feature_extraction.text import TfidfVectorizer as _V
-            _vec = _V(lowercase=True, analyzer='char_wb', ngram_range=(3, 5), min_df=1)
-            _mat = _vec.fit_transform(qs)
-            # Overwrite session artifacts only
-            vectorizer = _vec
-            qa_matrix = _mat
-            answers = ans
-            questions = qs
-            categories = cats if any(cats) else None
-            st.success(f"Loaded {len(qs)} Q/A pairs from uploaded CSV for this session.")
     # Category filter if available
     active_category = None
     if categories:

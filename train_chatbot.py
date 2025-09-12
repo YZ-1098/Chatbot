@@ -1,4 +1,4 @@
-import csv
+import json
 import pickle
 import os
 from typing import List, Tuple, Optional
@@ -7,25 +7,29 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 
-def read_conversation_csv(csv_path: str) -> Tuple[List[str], List[str], Optional[List[str]]]:
+def read_intents_json(json_path: str) -> Tuple[List[str], List[str], Optional[List[str]]]:
     questions: List[str] = []
     answers: List[str] = []
     categories: List[str] = []
-    with open(csv_path, newline='', encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        # Expecting columns: question, answer, [optional] category
-        for row in reader:
-            q = (row.get('question') or '').strip()
-            a = (row.get('answer') or '').strip()
-            if not q or not a:
+    with open(json_path, encoding='utf-8') as f:
+        data = json.load(f)
+    intents = data.get('intents') or []
+    for item in intents:
+        intent_name = (item.get('intent') or '').strip()
+        texts = item.get('text') or []
+        responses = item.get('responses') or []
+        if not texts or not responses:
+            continue
+        canonical_answer = str(responses[0]).strip()
+        for t in texts:
+            q = str(t).strip()
+            if not q:
                 continue
             questions.append(q)
-            answers.append(a)
-            cat = (row.get('category') or '').strip()
-            categories.append(cat if cat else '')
+            answers.append(canonical_answer)
+            categories.append(intent_name)
     if not questions:
-        raise ValueError("No question/answer rows found in Conversation.csv")
-    # Return categories only if at least one non-empty exists
+        raise ValueError("No usable entries found in intents.json")
     return questions, answers, (categories if any(categories) else None)
 
 
@@ -57,17 +61,22 @@ def save_artifacts(vectorizer, question_matrix, answers: List[str], questions: L
 
 if __name__ == "__main__":
 
-    csv_path = "Conversation.csv"
-    if not os.path.exists(csv_path):
-        # Allow alternate provided filename just in case
-        alt = "Conversations.csv"
-        if os.path.exists(alt):
-            csv_path = alt
-        else:
-            raise FileNotFoundError("Conversation.csv not found in project root")
+    if os.path.exists("intents.json"):
+        questions, answers, categories = read_intents_json("intents.json")
+        source = "intents.json"
+    else:
+        csv_path = "Conversation.csv"
+        if not os.path.exists(csv_path):
+            # Allow alternate provided filename just in case
+            alt = "Conversations.csv"
+            if os.path.exists(alt):
+                csv_path = alt
+            else:
+                raise FileNotFoundError("Neither intents.json nor Conversation.csv found in project root")
+        questions, answers, categories = read_conversation_csv(csv_path)
+        source = csv_path
 
-    questions, answers, categories = read_conversation_csv(csv_path)
     vectorizer, question_matrix = train_retriever(questions)
     save_artifacts(vectorizer, question_matrix, answers, questions, categories)
     extra = " with categories" if categories is not None else ""
-    print(f"Trained retrieval model on {len(questions)} Q/A pairs{extra} and saved artifacts.")
+    print(f"Loaded from {source}. Trained retrieval model on {len(questions)} Q/A pairs{extra} and saved artifacts.")
