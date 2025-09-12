@@ -286,7 +286,7 @@
        "fees for non-Ac room for boys"
     ],
     "responses": [
-       "For Fee detail visit <a target=\"_blank\" href=\"LINK\"> here</a>"
+       "For Fee detail visit <a target=\"_blank\" href=\"https://university.edu.my/fees\"> here</a>"
     ],
     "extension":  {
         "function": "",
@@ -320,7 +320,7 @@
        "location"
     ],
     "responses": [
-       "<a target=\"_blank\" href=\"ADD YOU GOOGLE MAP LINK HERE\"> here</a>"
+       "<a target=\"_blank\" href=\"https://university.edu.my/location\"> here</a>"
     ],
     "extension":  {
         "function": "",
@@ -362,7 +362,7 @@
        "distance between hostel and college"
     ],
     "responses": [
-       "For hostel detail visit <a target=\"_blank\" href=\"ADD YOUR HOSTEL DETAIL PDF LINK OR ANY INFORMATION LINK OR ADD YOU OWN ANSWERS\"> here</a>"
+       "For hostel detail visit <a target=\"_blank\" href=\"https://university.edu.my/hostel\"> here</a>"
     ],
     "extension":  {
         "function": "",
@@ -393,7 +393,7 @@
        "what about events"
     ],
     "responses": [
-       "For event detail visit <a target=\"_blank\" href=\"ADD YOUR FUNCTIONS LINK OR YOUR OWN RESPONSE\"> here</a>"
+       "For event detail visit <a target=\"_blank\" href=\"https://university.edu.my/events\"> here</a>"
     ],
     "extension":  {
         "function": "",
@@ -426,7 +426,7 @@
        "documents needed"
     ],
     "responses": [
-       "To know more about document required visit <a target=\"_blank\" href=\"ADD LINK OF ADMISSION GUIDANCE DOCUMENT FROM YOUR UNIVERSITY WEBSITE\"> here</a>"
+       "To know more about document required visit <a target=\"_blank\" href=\"https://university.edu.my/admissions/documents\"> here</a>"
     ],
     "extension":  {
         "function": "",
@@ -480,7 +480,7 @@
        "What is next lecture"
     ],
     "responses": [
-       "Timetable provide direct to the students OR To know about syllabus visit <a target=\"_blank\" href=\"TIMETABLE LINK\"> here</a>"
+       "Timetable provide direct to the students OR To know about syllabus visit <a target=\"_blank\" href=\"https://university.edu.my/timetable\"> here</a>"
     ],
     "extension":  {
         "function": "",
@@ -514,7 +514,7 @@
        "how many libraries"
     ],
     "responses": [
-       "There is one huge and spacious library.timings are 8am to 6pm and for more visit <a target=\"blank\" href=\"ADD LIBRARY DETAIL LINK\">here</a>"
+       "There is one huge and spacious library.timings are 8am to 6pm and for more visit <a target=\"blank\" href=\"https://university.edu.my/library\">here</a>"
     ],
     "extension":  {
         "function": "",
@@ -624,7 +624,7 @@
        "companies"
     ],
     "responses": [
-       "To know about placement visit <a target=\"_blank\" href=\"PLACEMENT INFORMATION LINK FROM YOUR UNIVERSITY WEBSITE IF THEY HAVE\">here</a>"
+       "To know about placement visit <a target=\"_blank\" href=\"https://university.edu.my/placements\">here</a>"
     ],
     "extension":  {
         "function": "",
@@ -826,7 +826,7 @@
        "fourth year scholarship"
     ],
     "responses": [
-       "Many government scholarships are supported by our university. For details and updates visit <a target=\"_blank\" href=\"(SCHOLARSHIP DETAILS LINK)\">here</a>"
+       "Many government scholarships are supported by our university. For details and updates visit <a target=\"_blank\" href=\"https://university.edu.my/scholarships\">here</a>"
     ],
     "extension":  {
         "function": "",
@@ -1047,7 +1047,7 @@
        "please provide sports and games information"
     ],
     "responses": [
-       "Our university encourages all-round development of students and hence provides sports facilities in the campus. For more details visit<a target=\"_blank\" href=/\"(LINK IF HAVE)\">here</a>"
+       "Our university encourages all-round development of students and hence provides sports facilities in the campus. For more details visit <a target=\"_blank\" href=\"https://university.edu.my/sports\">here</a>"
     ],
     "extension":  {
         "function": "",
@@ -1188,7 +1188,7 @@
        "Academic Calander"
     ],
     "responses": [
-       "Timetable Link visit <a target=\"_blank\" href=\"https://lightningmcqueen-95.github.io/collage/index.html\"> here</a>"
+       "Timetable Link visit <a target=\"_blank\" href=\"https://university.edu.my/timetable\"> here</a>"
     ],
     "extension":  {
         "function": "",
