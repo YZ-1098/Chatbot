@@ -1,0 +1,169 @@
+import os
+import pickle
+from typing import List, Tuple, Optional
+
+import numpy as np
+import streamlit as st
+from sklearn.metrics.pairwise import cosine_similarity
+
+@st.cache_resource(show_spinner=False)
+def load_artifacts():
+    base_dir = os.path.dirname(__file__)
+    with open(os.path.join(base_dir, "tfidf_vectorizer.pkl"), "rb") as f:
+        vectorizer = pickle.load(f)
+    with open(os.path.join(base_dir, "qa_matrix.pkl"), "rb") as f:
+        qa_matrix = pickle.load(f)
+    with open(os.path.join(base_dir, "qa_answers.pkl"), "rb") as f:
+        answers = pickle.load(f)
+    # Optional artifacts
+    questions: Optional[List[str]] = None
+    categories: Optional[List[str]] = None
+    q_path = os.path.join(base_dir, "qa_questions.pkl")
+    c_path = os.path.join(base_dir, "qa_categories.pkl")
+    if os.path.exists(q_path):
+        with open(q_path, "rb") as f:
+            questions = pickle.load(f)
+    if os.path.exists(c_path):
+        with open(c_path, "rb") as f:
+            categories = pickle.load(f)
+    return vectorizer, qa_matrix, answers, questions, categories
+
+def retrieve_top_k(user_text: str, vectorizer, qa_matrix, answers: List[str], top_k: int) -> List[Tuple[str, float, int]]:
+    user_vec = vectorizer.transform([user_text])
+    sims = cosine_similarity(user_vec, qa_matrix).flatten()
+    top_idx = np.argsort(sims)[::-1][:top_k]
+    results: List[Tuple[str, float, int]] = []
+    for idx in top_idx:
+        results.append((answers[idx], float(sims[idx]), int(idx)))
+    return results
+
+st.set_page_config(page_title="CSV Chatbot", page_icon="💬", layout="centered")
+
+st.title("💬 FAQ Chatbot")
+st.caption("TF‑IDF retrieval over your FAQ CSV (question, answer, optional category)")
+
+vectorizer, qa_matrix, answers, questions, categories = load_artifacts()
+
+with st.sidebar:
+    st.header("Settings")
+    threshold = st.slider("Match threshold", 0.0, 1.0, 0.35, 0.01)
+    top_k = st.slider("Show top‑k matches", 1, 5, 3, 1)
+    show_candidates = st.checkbox("Show candidates", value=False)
+    st.markdown("---")
+    st.subheader("Upload new FAQ CSV")
+    uploaded = st.file_uploader("CSV with columns: question, answer, [category]", type=["csv"], accept_multiple_files=False)
+    if uploaded is not None:
+        # Session-only retrain using uploaded CSV
+        import csv as _csv
+        from io import StringIO
+        # Read rows
+        decoded = uploaded.getvalue().decode("utf-8", errors="ignore")
+        reader = _csv.DictReader(StringIO(decoded))
+        qs: List[str] = []
+        ans: List[str] = []
+        cats: List[str] = []
+        for row in reader:
+            q = (row.get('question') or '').strip()
+            a = (row.get('answer') or '').strip()
+            if not q or not a:
+                continue
+            qs.append(q)
+            ans.append(a)
+            c = (row.get('category') or '').strip()
+            cats.append(c if c else '')
+        if qs:
+            from sklearn.feature_extraction.text import TfidfVectorizer as _V
+            _vec = _V(lowercase=True, analyzer='char_wb', ngram_range=(3, 5), min_df=1)
+            _mat = _vec.fit_transform(qs)
+            # Overwrite session artifacts only
+            vectorizer = _vec
+            qa_matrix = _mat
+            answers = ans
+            questions = qs
+            categories = cats if any(cats) else None
+            st.success(f"Loaded {len(qs)} Q/A pairs from uploaded CSV for this session.")
+    # Category filter if available
+    active_category = None
+    if categories:
+        unique_cats = sorted({c for c in categories if c})
+        if unique_cats:
+            selected = st.selectbox("Filter by category", ["(All)"] + unique_cats, index=0)
+            active_category = None if selected == "(All)" else selected
+
+if "history" not in st.session_state:
+    st.session_state.history = []  # list of (role, text)
+if "ratings" not in st.session_state:
+    st.session_state.ratings = []  # list of dicts {turn, prompt, reply, score}
+
+for role, text in st.session_state.history:
+    with st.chat_message(role):
+        st.markdown(text)
+
+prompt = st.chat_input("Type your message…")
+if prompt:
+    st.session_state.history.append(("user", prompt))
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    # If filtering by category, zero out similarities for items not in the category
+    if active_category and categories:
+        user_vec = vectorizer.transform([prompt])
+        sims = cosine_similarity(user_vec, qa_matrix).flatten()
+        mask = np.array([1.0 if categories[i] == active_category else 0.0 for i in range(len(answers))], dtype=float)
+        sims = sims * mask
+        order = np.argsort(sims)[::-1][:top_k]
+        candidates = [(answers[i], float(sims[i]), int(i)) for i in order]
+    else:
+        candidates = retrieve_top_k(prompt, vectorizer, qa_matrix, answers, top_k=top_k)
+    best_answer, best_score, _ = candidates[0]
+    if best_score < threshold:
+        reply = "I’m not sure yet. Could you rephrase or ask something else?"
+    else:
+        reply = best_answer
+
+    with st.chat_message("assistant"):
+        st.markdown(reply)
+        if show_candidates:
+            with st.expander("View candidates"):
+                for ans, score, idx in candidates:
+                    meta = []
+                    if questions and 0 <= idx < len(questions):
+                        meta.append(f"Q: {questions[idx]}")
+                    if categories and 0 <= idx < len(categories) and categories[idx]:
+                        meta.append(f"Category: {categories[idx]}")
+                    st.write(f"Score: {score:.3f} | idx: {idx}")
+                    if meta:
+                        st.caption(" | ".join(meta))
+                    st.text(ans)
+                    st.markdown("---")
+
+    st.session_state.history.append(("assistant", reply))
+
+    # Usability rating UI per assistant reply
+    with st.container(border=True):
+        st.write("Rate this response (1=poor, 5=excellent):")
+        col1, col2 = st.columns([1, 3])
+        with col1:
+            rating = st.slider("Rating", 1, 5, 4, 1, key=f"rate_{len(st.session_state.history)}")
+        with col2:
+            feedback = st.text_input("Optional feedback", key=f"fb_{len(st.session_state.history)}")
+        if st.button("Submit rating", key=f"submit_{len(st.session_state.history)}"):
+            st.session_state.ratings.append({
+                "turn": len(st.session_state.history),
+                "prompt": prompt,
+                "reply": reply,
+                "score": int(rating),
+                "feedback": feedback,
+            })
+            st.success("Thanks for your rating!")
+
+st.markdown("\n\n")
+st.caption("Tip: adjust the threshold if responses feel too generic or too strict.")
+
+# Show simple usability stats
+if st.session_state.ratings:
+    scores = [r["score"] for r in st.session_state.ratings]
+    avg = sum(scores) / len(scores)
+    st.markdown(f"**Average user rating:** {avg:.2f} (n={len(scores)})")
+
+
