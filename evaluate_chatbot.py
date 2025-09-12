@@ -18,6 +18,7 @@ try:
 except Exception:
     rouge_scorer = None  # type: ignore
 
+
 def read_conversation_csv(csv_path: str) -> Tuple[List[str], List[str]]:
     questions: List[str] = []
     answers: List[str] = []
@@ -34,6 +35,7 @@ def read_conversation_csv(csv_path: str) -> Tuple[List[str], List[str]]:
         raise ValueError("No question/answer rows found in Conversation.csv")
     return questions, answers
 
+
 def load_artifacts(base_dir: str):
     with open(os.path.join(base_dir, "tfidf_vectorizer.pkl"), "rb") as f:
         vectorizer = pickle.load(f)
@@ -42,6 +44,7 @@ def load_artifacts(base_dir: str):
     with open(os.path.join(base_dir, "qa_answers.pkl"), "rb") as f:
         answers = pickle.load(f)
     return vectorizer, qa_matrix, answers
+
 
 def evaluate_classification(
     questions: List[str],
@@ -83,6 +86,7 @@ def evaluate_classification(
         "f1": float(f1),
         "support": int(sum(y_true_bin)),
     }
+
 
 def evaluate_generation(
     questions: List[str],
@@ -135,6 +139,7 @@ def evaluate_generation(
 
     return results
 
+
 def main():
     base_dir = os.path.dirname(__file__)
     csv_path = os.path.join(base_dir, "Conversation.csv")
@@ -149,6 +154,7 @@ def main():
     print(cls_metrics)
     print("\nGeneration metrics:")
     print(gen_metrics)
+
 
 if __name__ == "__main__":
     main()

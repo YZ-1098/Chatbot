@@ -6,6 +6,7 @@ import numpy as np
 import streamlit as st
 from sklearn.metrics.pairwise import cosine_similarity
 
+
 @st.cache_resource(show_spinner=False)
 def load_artifacts():
     base_dir = os.path.dirname(__file__)
@@ -28,6 +29,7 @@ def load_artifacts():
             categories = pickle.load(f)
     return vectorizer, qa_matrix, answers, questions, categories
 
+
 def retrieve_top_k(user_text: str, vectorizer, qa_matrix, answers: List[str], top_k: int) -> List[Tuple[str, float, int]]:
     user_vec = vectorizer.transform([user_text])
     sims = cosine_similarity(user_vec, qa_matrix).flatten()
@@ -36,6 +38,7 @@ def retrieve_top_k(user_text: str, vectorizer, qa_matrix, answers: List[str], to
     for idx in top_idx:
         results.append((answers[idx], float(sims[idx]), int(idx)))
     return results
+
 
 st.set_page_config(page_title="CSV Chatbot", page_icon="💬", layout="centered")
 

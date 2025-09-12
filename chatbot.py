@@ -15,6 +15,7 @@ with open(os.path.join(BASE_DIR, "qa_matrix.pkl"), "rb") as f:
 with open(os.path.join(BASE_DIR, "qa_answers.pkl"), "rb") as f:
     answers = pickle.load(f)
 
+
 def retrieve_answer(user_text: str, top_k: int = 1, threshold: float = 0.35):
     user_vec = vectorizer.transform([user_text])
     sims = cosine_similarity(user_vec, qa_matrix).flatten()
@@ -23,6 +24,10 @@ def retrieve_answer(user_text: str, top_k: int = 1, threshold: float = 0.35):
     if best_score < threshold:
         return None, best_score
     return answers[best_idx], best_score
+
+# -------------------------
+# Chat loop (retrieval)
+# -------------------------
 
 print("Chatbot is running! (type 'quit' to exit)\n")
 

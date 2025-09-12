@@ -1,23 +1,10 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
 import csv
 import pickle
 import os
 from typing import List, Tuple, Optional
 
-
-# In[2]:
-
-
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-
-
-# In[4]:
 
 
 def read_conversation_csv(csv_path: str) -> Tuple[List[str], List[str], Optional[List[str]]]:
@@ -42,9 +29,6 @@ def read_conversation_csv(csv_path: str) -> Tuple[List[str], List[str], Optional
     return questions, answers, (categories if any(categories) else None)
 
 
-# In[5]:
-
-
 def train_retriever(questions: List[str]):
     # Character n-grams are robust to spelling/wording variations
     vectorizer = TfidfVectorizer(lowercase=True,
@@ -53,9 +37,6 @@ def train_retriever(questions: List[str]):
                                  min_df=1)
     question_matrix = vectorizer.fit_transform(questions)
     return vectorizer, question_matrix
-
-
-# In[6]:
 
 
 def save_artifacts(vectorizer, question_matrix, answers: List[str], questions: List[str], categories: Optional[List[str]], out_dir: str = "."):
@@ -74,9 +55,6 @@ def save_artifacts(vectorizer, question_matrix, answers: List[str], questions: L
             pickle.dump(categories, f)
 
 
-# In[7]:
-
-
 if __name__ == "__main__":
 
     csv_path = "Conversation.csv"
@@ -93,4 +71,3 @@ if __name__ == "__main__":
     save_artifacts(vectorizer, question_matrix, answers, questions, categories)
     extra = " with categories" if categories is not None else ""
     print(f"Trained retrieval model on {len(questions)} Q/A pairs{extra} and saved artifacts.")
-
