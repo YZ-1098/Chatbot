@@ -42,7 +42,7 @@ def retrieve_top_k(user_text: str, vectorizer, qa_matrix, answers: List[str], to
 
 st.set_page_config(page_title="FAQ Chatbot", page_icon="💬", layout="centered")
 
-st.title("💬 FAQ Chatbot")
+st.title("💬 University FAQ Chatbot")
 st.caption("TF‑IDF retrieval over intents.json (intent texts as questions, response as answer)")
 
 vectorizer, qa_matrix, answers, questions, categories = load_artifacts()
