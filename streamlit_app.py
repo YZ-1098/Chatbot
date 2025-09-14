@@ -48,27 +48,6 @@ st.set_page_config(page_title="FAQ Chatbot", page_icon="💬", layout="centered"
 st.title("💬 University FAQ Chatbot")
 st.caption("Multi-Algorithm Chatbot for Group Assignment - Compare different NLP approaches!")
 
-# Group assignment instructions
-with st.expander("📋 Instructions for Group Members"):
-    st.markdown("""
-    **How to implement your algorithm:**
-    
-    1. **Find your section** in the code (around line 115-125)
-    2. **Replace the placeholder** with your implementation
-    3. **Your function should return** a list of tuples: `[(answer, score, index), ...]`
-    4. **Use the same interface** as Yong Zheng's SentenceTransformer example
-    
-    **Group Member Assignments:**
-    - **Yong Zheng**: Deep Learning (SentenceTransformer) (✅ Completed)
-    - **Ew Chiu Linn**: [Your algorithm choice - TF-IDF, BERT, RoBERTa, etc.]
-    - **Chong Yee Yang**: [Your algorithm choice - TF-IDF, BERT, RoBERTa, etc.]
-    
-    **Testing your algorithm:**
-    - Select your name from the dropdown
-    - Test with various questions
-    - Compare performance with other group members
-    - Check the performance stats at the bottom
-    """)
 
 model, question_embeddings, answers, questions, categories = load_artifacts()
 
@@ -101,16 +80,43 @@ if prompt:
     with st.chat_message("user"):
         st.markdown(prompt)
     
-    # Show which group member's algorithm is being used
+    # Set current algorithm for tracking
     if active_algorithm == "Yong Zheng" or active_algorithm is None:
         current_algorithm = "Yong Zheng (Deep Learning)"
     else:
         current_algorithm = active_algorithm
-    with st.chat_message("assistant"):
-        st.caption(f"🤖 Using: {current_algorithm}'s Algorithm")
 
     # Group member algorithm-specific processing
-    if active_algorithm == "Yong Zheng" or active_algorithm is None:
+    if active_algorithm is None:  # "(All Members)" selected
+        # Show results from all algorithms
+        all_results = {}
+        
+        # Yong Zheng's results
+        yong_candidates = retrieve_top_k(prompt, model, question_embeddings, answers, top_k=top_k)
+        if yong_candidates:
+            all_results["Yong Zheng (Deep Learning)"] = yong_candidates[0]  # Get best result
+        
+        # Ew Chiu Linn's results (placeholder)
+        all_results["Ew Chiu Linn"] = ("Algorithm not implemented yet", 0.0, -1)
+        
+        # Chong Yee Yang's results (placeholder)
+        all_results["Chong Yee Yang"] = ("Algorithm not implemented yet", 0.0, -1)
+        
+        # Display all results
+        with st.chat_message("assistant"):
+            st.markdown("**Responses from all group members:**")
+            for member, (answer, score, idx) in all_results.items():
+                if score > 0:
+                    st.markdown(f"**{member}:** {answer}")
+                    st.caption(f"Score: {score:.3f}")
+                else:
+                    st.markdown(f"**{member}:** {answer}")
+                st.markdown("---")
+        
+        # Use the best overall result for rating purposes
+        candidates = yong_candidates if yong_candidates else []
+        
+    elif active_algorithm == "Yong Zheng":
         # Yong Zheng's SentenceTransformer implementation
         candidates = retrieve_top_k(prompt, model, question_embeddings, answers, top_k=top_k)
     
@@ -128,33 +134,39 @@ if prompt:
         # Fallback to Yong Zheng's implementation
         candidates = retrieve_top_k(prompt, model, question_embeddings, answers, top_k=top_k)
     
-    # Safety check: ensure we have at least one candidate
-    if not candidates:
-        reply = "I'm not sure yet. Could you rephrase or ask something else?"
+    # Handle response display based on selection
+    if active_algorithm is None:  # "(All Members)" selected
+        # Response already displayed above, just add to history
+        combined_reply = "Responses from all group members displayed above"
+        st.session_state.history.append(("assistant", combined_reply))
     else:
-        best_answer, best_score, _ = candidates[0]
-        if best_score < threshold:
+        # Single algorithm response
+        if not candidates:
             reply = "I'm not sure yet. Could you rephrase or ask something else?"
         else:
-            reply = best_answer
+            best_answer, best_score, _ = candidates[0]
+            if best_score < threshold:
+                reply = "I'm not sure yet. Could you rephrase or ask something else?"
+            else:
+                reply = best_answer
 
-    with st.chat_message("assistant"):
-        st.markdown(reply)
-        if show_candidates:
-            with st.expander("View candidates"):
-                for ans, score, idx in candidates:
-                    meta = []
-                    if questions and 0 <= idx < len(questions):
-                        meta.append(f"Q: {questions[idx]}")
-                    if categories and 0 <= idx < len(categories) and categories[idx]:
-                        meta.append(f"Category: {categories[idx]}")
-                    st.write(f"Score: {score:.3f} | idx: {idx}")
-                    if meta:
-                        st.caption(" | ".join(meta))
-                    st.text(ans)
-                    st.markdown("---")
+        with st.chat_message("assistant"):
+            st.markdown(reply)
+            if show_candidates:
+                with st.expander("View candidates"):
+                    for ans, score, idx in candidates:
+                        meta = []
+                        if questions and 0 <= idx < len(questions):
+                            meta.append(f"Q: {questions[idx]}")
+                        if categories and 0 <= idx < len(categories) and categories[idx]:
+                            meta.append(f"Category: {categories[idx]}")
+                        st.write(f"Score: {score:.3f} | idx: {idx}")
+                        if meta:
+                            st.caption(" | ".join(meta))
+                        st.text(ans)
+                        st.markdown("---")
 
-    st.session_state.history.append(("assistant", reply))
+        st.session_state.history.append(("assistant", reply))
 
     # Usability rating UI per assistant reply
     with st.container(border=True):
