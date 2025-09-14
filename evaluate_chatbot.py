@@ -4,7 +4,7 @@ import pickle
 from typing import List, Tuple
 
 import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
+from sentence_transformers import SentenceTransformer, util
 from sklearn.metrics import precision_recall_fscore_support
 
 try:
@@ -46,20 +46,19 @@ def read_intents_json(json_path: str) -> Tuple[List[str], List[str]]:
 
 
 def load_artifacts(base_dir: str):
-    with open(os.path.join(base_dir, "tfidf_vectorizer.pkl"), "rb") as f:
-        vectorizer = pickle.load(f)
-    with open(os.path.join(base_dir, "qa_matrix.pkl"), "rb") as f:
-        qa_matrix = pickle.load(f)
+    model = SentenceTransformer(os.path.join(base_dir, "sbert_model"))
+    with open(os.path.join(base_dir, "qa_embeddings.pkl"), "rb") as f:
+        question_embeddings = pickle.load(f)
     with open(os.path.join(base_dir, "qa_answers.pkl"), "rb") as f:
         answers = pickle.load(f)
-    return vectorizer, qa_matrix, answers
+    return model, question_embeddings, answers
 
 
 def evaluate_classification(
     questions: List[str],
     gold_answers: List[str],
-    vectorizer,
-    qa_matrix,
+    model,
+    question_embeddings,
     index_to_answer: List[str],
     threshold: float = 0.35,
 ):
@@ -72,10 +71,10 @@ def evaluate_classification(
         answer_to_index.setdefault(ans, idx)
 
     for q, gold in zip(questions, gold_answers):
-        user_vec = vectorizer.transform([q])
-        sims = cosine_similarity(user_vec, qa_matrix).flatten()
-        best_idx = int(np.argmax(sims))
-        best_score = float(sims[best_idx])
+        user_embedding = model.encode([q], convert_to_tensor=True)
+        similarities = util.cos_sim(user_embedding, question_embeddings).flatten()
+        best_idx = int(np.argmax(similarities))
+        best_score = float(similarities[best_idx])
         pred_idx = best_idx if best_score >= threshold else -1
 
         true_idx = answer_to_index.get(gold, -1)
@@ -100,15 +99,16 @@ def evaluate_classification(
 def evaluate_generation(
     questions: List[str],
     gold_answers: List[str],
-    vectorizer,
-    qa_matrix,
+    model,
+    question_embeddings,
     index_to_answer: List[str],
 ):
     # Build predictions (top-1)
     preds: List[str] = []
     for q in questions:
-        sims = cosine_similarity(vectorizer.transform([q]), qa_matrix).flatten()
-        best_idx = int(np.argmax(sims))
+        user_embedding = model.encode([q], convert_to_tensor=True)
+        similarities = util.cos_sim(user_embedding, question_embeddings).flatten()
+        best_idx = int(np.argmax(similarities))
         preds.append(index_to_answer[best_idx])
 
     results = {}
@@ -154,10 +154,10 @@ def main():
     questions, gold_answers = read_intents_json(os.path.join(base_dir, "intents.json"))
     print(f"Evaluating on {len(questions)} items from intents.json")
 
-    vectorizer, qa_matrix, answers = load_artifacts(base_dir)
+    model, question_embeddings, answers = load_artifacts(base_dir)
 
-    cls_metrics = evaluate_classification(questions, gold_answers, vectorizer, qa_matrix, answers)
-    gen_metrics = evaluate_generation(questions, gold_answers, vectorizer, qa_matrix, answers)
+    cls_metrics = evaluate_classification(questions, gold_answers, model, question_embeddings, answers)
+    gen_metrics = evaluate_generation(questions, gold_answers, model, question_embeddings, answers)
 
     print("Classification (exact-match on answer text):")
     print(cls_metrics)

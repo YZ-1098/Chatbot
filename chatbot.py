@@ -4,23 +4,22 @@ import numpy as np
 import time
 import datetime
 import os
-from sklearn.metrics.pairwise import cosine_similarity
+from sentence_transformers import SentenceTransformer, util
 
 # Load retrieval artifacts (resolve relative to this file's directory)
 BASE_DIR = os.path.dirname(__file__)
-with open(os.path.join(BASE_DIR, "tfidf_vectorizer.pkl"), "rb") as f:
-    vectorizer = pickle.load(f)
-with open(os.path.join(BASE_DIR, "qa_matrix.pkl"), "rb") as f:
-    qa_matrix = pickle.load(f)
+model = SentenceTransformer(os.path.join(BASE_DIR, "sbert_model"))
+with open(os.path.join(BASE_DIR, "qa_embeddings.pkl"), "rb") as f:
+    question_embeddings = pickle.load(f)
 with open(os.path.join(BASE_DIR, "qa_answers.pkl"), "rb") as f:
     answers = pickle.load(f)
 
 
 def retrieve_answer(user_text: str, top_k: int = 1, threshold: float = 0.35):
-    user_vec = vectorizer.transform([user_text])
-    sims = cosine_similarity(user_vec, qa_matrix).flatten()
-    best_idx = int(np.argmax(sims))
-    best_score = float(sims[best_idx])
+    user_embedding = model.encode([user_text], convert_to_tensor=True)
+    similarities = util.cos_sim(user_embedding, question_embeddings).flatten()
+    best_idx = int(np.argmax(similarities))
+    best_score = float(similarities[best_idx])
     if best_score < threshold:
         return None, best_score
     return answers[best_idx], best_score

@@ -4,16 +4,15 @@ from typing import List, Tuple, Optional
 
 import numpy as np
 import streamlit as st
-from sklearn.metrics.pairwise import cosine_similarity
+from sentence_transformers import SentenceTransformer, util
 
 
 @st.cache_resource(show_spinner=False)
 def load_artifacts():
     base_dir = os.path.dirname(__file__)
-    with open(os.path.join(base_dir, "tfidf_vectorizer.pkl"), "rb") as f:
-        vectorizer = pickle.load(f)
-    with open(os.path.join(base_dir, "qa_matrix.pkl"), "rb") as f:
-        qa_matrix = pickle.load(f)
+    model = SentenceTransformer(os.path.join(base_dir, "sbert_model"))
+    with open(os.path.join(base_dir, "qa_embeddings.pkl"), "rb") as f:
+        question_embeddings = pickle.load(f)
     with open(os.path.join(base_dir, "qa_answers.pkl"), "rb") as f:
         answers = pickle.load(f)
     # Optional artifacts
@@ -27,25 +26,25 @@ def load_artifacts():
     if os.path.exists(c_path):
         with open(c_path, "rb") as f:
             categories = pickle.load(f)
-    return vectorizer, qa_matrix, answers, questions, categories
+    return model, question_embeddings, answers, questions, categories
 
 
-def retrieve_top_k(user_text: str, vectorizer, qa_matrix, answers: List[str], top_k: int) -> List[Tuple[str, float, int]]:
-    user_vec = vectorizer.transform([user_text])
-    sims = cosine_similarity(user_vec, qa_matrix).flatten()
-    top_idx = np.argsort(sims)[::-1][:top_k]
+def retrieve_top_k(user_text: str, model, question_embeddings, answers: List[str], top_k: int) -> List[Tuple[str, float, int]]:
+    user_embedding = model.encode([user_text], convert_to_tensor=True)
+    similarities = util.cos_sim(user_embedding, question_embeddings).flatten()
+    top_idx = np.argsort(similarities)[::-1][:top_k]
     results: List[Tuple[str, float, int]] = []
     for idx in top_idx:
-        results.append((answers[idx], float(sims[idx]), int(idx)))
+        results.append((answers[idx], float(similarities[idx]), int(idx)))
     return results
 
 
 st.set_page_config(page_title="FAQ Chatbot", page_icon="💬", layout="centered")
 
 st.title("💬 University FAQ Chatbot")
-st.caption("TF‑IDF retrieval over intents.json (intent texts as questions, response as answer)")
+st.caption("Deep Learning (SentenceTransformer) retrieval over intents.json (intent texts as questions, response as answer)")
 
-vectorizer, qa_matrix, answers, questions, categories = load_artifacts()
+model, question_embeddings, answers, questions, categories = load_artifacts()
 
 with st.sidebar:
     st.header("Settings")
@@ -77,14 +76,14 @@ if prompt:
 
     # If filtering by category, zero out similarities for items not in the category
     if active_category and categories:
-        user_vec = vectorizer.transform([prompt])
-        sims = cosine_similarity(user_vec, qa_matrix).flatten()
+        user_embedding = model.encode([prompt], convert_to_tensor=True)
+        similarities = util.cos_sim(user_embedding, question_embeddings).flatten()
         mask = np.array([1.0 if categories[i] == active_category else 0.0 for i in range(len(answers))], dtype=float)
-        sims = sims * mask
-        order = np.argsort(sims)[::-1][:top_k]
-        candidates = [(answers[i], float(sims[i]), int(i)) for i in order]
+        similarities = similarities * mask
+        order = np.argsort(similarities)[::-1][:top_k]
+        candidates = [(answers[i], float(similarities[i]), int(i)) for i in order]
     else:
-        candidates = retrieve_top_k(prompt, vectorizer, qa_matrix, answers, top_k=top_k)
+        candidates = retrieve_top_k(prompt, model, question_embeddings, answers, top_k=top_k)
     best_answer, best_score, _ = candidates[0]
     if best_score < threshold:
         reply = "I’m not sure yet. Could you rephrase or ask something else?"

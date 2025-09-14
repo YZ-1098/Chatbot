@@ -4,3 +4,5 @@ scikit-learn
 streamlit
 rouge-score
 nltk
+sentence-transformers
+torch
