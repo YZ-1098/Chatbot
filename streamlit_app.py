@@ -53,21 +53,20 @@ with st.expander("📋 Instructions for Group Members"):
     st.markdown("""
     **How to implement your algorithm:**
     
-    1. **Find your algorithm section** in the code (around line 110-130)
+    1. **Find your section** in the code (around line 115-125)
     2. **Replace the placeholder** with your implementation
     3. **Your function should return** a list of tuples: `[(answer, score, index), ...]`
-    4. **Use the same interface** as the SentenceTransformer example
+    4. **Use the same interface** as Yong Zheng's SentenceTransformer example
     
-    **Available algorithms to implement:**
-    - **TF-IDF**: Traditional bag-of-words approach
-    - **BERT**: Bidirectional Encoder Representations from Transformers
-    - **RoBERTa**: Robustly Optimized BERT Pretraining Approach
-    - **DistilBERT**: Distilled version of BERT
+    **Group Member Assignments:**
+    - **Yong Zheng**: Deep Learning (SentenceTransformer) (✅ Completed)
+    - **Ew Chiu Linn**: [Your algorithm choice - TF-IDF, BERT, RoBERTa, etc.]
+    - **Chong Yee Yang**: [Your algorithm choice - TF-IDF, BERT, RoBERTa, etc.]
     
     **Testing your algorithm:**
-    - Select your algorithm from the dropdown
+    - Select your name from the dropdown
     - Test with various questions
-    - Compare performance with other algorithms
+    - Compare performance with other group members
     - Check the performance stats at the bottom
     """)
 
@@ -79,19 +78,11 @@ with st.sidebar:
     top_k = st.slider("Show top‑k matches", 1, 5, 3, 1)
     show_candidates = st.checkbox("Show candidates", value=False)
     
-    # Algorithm filter for group assignment
-    st.subheader("Algorithm Selection")
-    algorithm_options = ["(All Algorithms)", "SentenceTransformer", "TF-IDF", "BERT", "RoBERTa", "DistilBERT"]
-    selected_algorithm = st.selectbox("Choose algorithm to test:", algorithm_options, index=0)
-    active_algorithm = None if selected_algorithm == "(All Algorithms)" else selected_algorithm
-    
-    # Category filter if available (for within-algorithm filtering)
-    active_category = None
-    if categories:
-        unique_cats = sorted({c for c in categories if c})
-        if unique_cats:
-            selected = st.selectbox("Filter by category", ["(All)"] + unique_cats, index=0)
-            active_category = None if selected == "(All)" else selected
+    # Group member algorithm selection
+    st.subheader("Group Member Selection")
+    algorithm_options = ["(All Members)", "Yong Zheng", "Ew Chiu Linn", "Chong Yee Yang"]
+    selected_algorithm = st.selectbox("Choose group member's algorithm to test:", algorithm_options, index=0)
+    active_algorithm = None if selected_algorithm == "(All Members)" else selected_algorithm
 
 if "history" not in st.session_state:
     st.session_state.history = []  # list of (role, text)
@@ -110,50 +101,31 @@ if prompt:
     with st.chat_message("user"):
         st.markdown(prompt)
     
-    # Show which algorithm is being used
-    current_algorithm = active_algorithm if active_algorithm else "SentenceTransformer (Default)"
+    # Show which group member's algorithm is being used
+    if active_algorithm == "Yong Zheng" or active_algorithm is None:
+        current_algorithm = "Yong Zheng (Deep Learning)"
+    else:
+        current_algorithm = active_algorithm
     with st.chat_message("assistant"):
-        st.caption(f"🤖 Using: {current_algorithm}")
+        st.caption(f"🤖 Using: {current_algorithm}'s Algorithm")
 
-    # Algorithm-specific processing
-    if active_algorithm == "SentenceTransformer" or active_algorithm is None:
-        # Current SentenceTransformer implementation
-        if active_category and categories:
-            user_embedding = model.encode([prompt], convert_to_tensor=True)
-            similarities = util.cos_sim(user_embedding, question_embeddings).flatten()
-            # Convert to numpy array to avoid tensor issues
-            similarities = similarities.cpu().numpy()
-            mask = np.array([1.0 if categories[i] == active_category else 0.0 for i in range(len(answers))], dtype=float)
-            similarities = similarities * mask
-            # Ensure top_k is at least 1
-            safe_top_k = max(1, top_k)
-            order = np.argsort(similarities)[::-1][:safe_top_k]
-            candidates = [(answers[i], float(similarities[i]), int(i)) for i in order]
-        else:
-            candidates = retrieve_top_k(prompt, model, question_embeddings, answers, top_k=top_k)
+    # Group member algorithm-specific processing
+    if active_algorithm == "Yong Zheng" or active_algorithm is None:
+        # Yong Zheng's SentenceTransformer implementation
+        candidates = retrieve_top_k(prompt, model, question_embeddings, answers, top_k=top_k)
     
-    elif active_algorithm == "TF-IDF":
-        # Placeholder for TF-IDF implementation
-        st.warning("🚧 TF-IDF implementation not yet available. Please implement this algorithm.")
+    elif active_algorithm == "Ew Chiu Linn":
+        # Placeholder for Ew Chiu Linn's implementation
+        st.warning("🚧 Ew Chiu Linn's algorithm implementation not yet available. Please implement this algorithm.")
         candidates = []
     
-    elif active_algorithm == "BERT":
-        # Placeholder for BERT implementation
-        st.warning("🚧 BERT implementation not yet available. Please implement this algorithm.")
-        candidates = []
-    
-    elif active_algorithm == "RoBERTa":
-        # Placeholder for RoBERTa implementation
-        st.warning("🚧 RoBERTa implementation not yet available. Please implement this algorithm.")
-        candidates = []
-    
-    elif active_algorithm == "DistilBERT":
-        # Placeholder for DistilBERT implementation
-        st.warning("🚧 DistilBERT implementation not yet available. Please implement this algorithm.")
+    elif active_algorithm == "Chong Yee Yang":
+        # Placeholder for Chong Yee Yang's implementation
+        st.warning("🚧 Chong Yee Yang's algorithm implementation not yet available. Please implement this algorithm.")
         candidates = []
     
     else:
-        # Fallback to SentenceTransformer
+        # Fallback to Yong Zheng's implementation
         candidates = retrieve_top_k(prompt, model, question_embeddings, answers, top_k=top_k)
     
     # Safety check: ensure we have at least one candidate
