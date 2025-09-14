@@ -6,7 +6,14 @@ import random
 import numpy as np
 import streamlit as st
 from sentence_transformers import SentenceTransformer, util
-from tensorflow.keras.models import load_model
+
+# Optional TensorFlow import
+try:
+    from tensorflow.keras.models import load_model
+    TENSORFLOW_AVAILABLE = True
+except ImportError:
+    TENSORFLOW_AVAILABLE = False
+    load_model = None
 
 
 @st.cache_resource(show_spinner=False)
@@ -39,14 +46,18 @@ def load_artifacts():
     tf_responses = None
     
     tf_model_path = os.path.join(base_dir, "tensorflow_model")
-    if os.path.exists(tf_model_path):
-        tf_model = load_model(tf_model_path)
-        with open(os.path.join(base_dir, "tf_vectorizer.pkl"), "rb") as f:
-            tf_vectorizer = pickle.load(f)
-        with open(os.path.join(base_dir, "tf_label_encoder.pkl"), "rb") as f:
-            tf_label_encoder = pickle.load(f)
-        with open(os.path.join(base_dir, "tf_responses.pkl"), "rb") as f:
-            tf_responses = pickle.load(f)
+    if os.path.exists(tf_model_path) and TENSORFLOW_AVAILABLE:
+        try:
+            tf_model = load_model(tf_model_path)
+            with open(os.path.join(base_dir, "tf_vectorizer.pkl"), "rb") as f:
+                tf_vectorizer = pickle.load(f)
+            with open(os.path.join(base_dir, "tf_label_encoder.pkl"), "rb") as f:
+                tf_label_encoder = pickle.load(f)
+            with open(os.path.join(base_dir, "tf_responses.pkl"), "rb") as f:
+                tf_responses = pickle.load(f)
+        except Exception as e:
+            st.warning(f"Failed to load TensorFlow model: {e}")
+            tf_model = None
     
     return model, question_embeddings, answers, questions, categories, tf_model, tf_vectorizer, tf_label_encoder, tf_responses
 
@@ -135,11 +146,14 @@ if prompt:
             all_results["Yong Zheng (Deep Learning)"] = yong_candidates[0]  # Get best result
         
         # Ew Chiu Linn's TensorFlow results
-        if tf_model is not None:
+        if tf_model is not None and TENSORFLOW_AVAILABLE:
             tf_response, tf_confidence = tensorflow_predict(prompt, tf_model, tf_vectorizer, tf_label_encoder, tf_responses)
             all_results["Ew Chiu Linn (TensorFlow)"] = (tf_response, tf_confidence, -1)
         else:
-            all_results["Ew Chiu Linn (TensorFlow)"] = ("TensorFlow model not trained yet", 0.0, -1)
+            if not TENSORFLOW_AVAILABLE:
+                all_results["Ew Chiu Linn (TensorFlow)"] = ("TensorFlow not available - install tensorflow>=2.13.0", 0.0, -1)
+            else:
+                all_results["Ew Chiu Linn (TensorFlow)"] = ("TensorFlow model not trained yet", 0.0, -1)
         
         # Chong Yee Yang's results (placeholder)
         all_results["Chong Yee Yang"] = ("Algorithm not implemented yet", 0.0, -1)
@@ -180,11 +194,14 @@ if prompt:
     
     elif active_algorithm == "Ew Chiu Linn":
         # Ew Chiu Linn's TensorFlow implementation
-        if tf_model is not None:
+        if tf_model is not None and TENSORFLOW_AVAILABLE:
             tf_response, tf_confidence = tensorflow_predict(prompt, tf_model, tf_vectorizer, tf_label_encoder, tf_responses)
             candidates = [(tf_response, tf_confidence, -1)]
         else:
-            st.warning("🚧 TensorFlow model not trained yet. Run 'python train_tensorflow.py' first.")
+            if not TENSORFLOW_AVAILABLE:
+                st.warning("🚧 TensorFlow not available. Install with: pip install tensorflow>=2.13.0")
+            else:
+                st.warning("🚧 TensorFlow model not trained yet. Run 'python train_tensorflow.py' first.")
             candidates = []
     
     elif active_algorithm == "Chong Yee Yang":

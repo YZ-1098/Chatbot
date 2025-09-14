@@ -6,9 +6,18 @@ import nltk
 from typing import List, Tuple, Optional
 from sklearn.preprocessing import LabelEncoder
 from sklearn.feature_extraction.text import CountVectorizer
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout
-from tensorflow.keras.optimizers import Adam
+
+# TensorFlow imports with error handling
+try:
+    from tensorflow.keras.models import Sequential
+    from tensorflow.keras.layers import Dense, Dropout
+    from tensorflow.keras.optimizers import Adam
+    TENSORFLOW_AVAILABLE = True
+except ImportError as e:
+    print(f"TensorFlow not available: {e}")
+    print("Please install TensorFlow: pip install tensorflow>=2.13.0")
+    TENSORFLOW_AVAILABLE = False
+    exit(1)
 
 # Download required NLTK data
 try:
