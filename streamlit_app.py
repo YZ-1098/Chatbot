@@ -32,6 +32,8 @@ def load_artifacts():
 def retrieve_top_k(user_text: str, model, question_embeddings, answers: List[str], top_k: int) -> List[Tuple[str, float, int]]:
     user_embedding = model.encode([user_text], convert_to_tensor=True)
     similarities = util.cos_sim(user_embedding, question_embeddings).flatten()
+    # Convert to numpy array to avoid tensor issues
+    similarities = similarities.cpu().numpy()
     # Ensure top_k is at least 1
     top_k = max(1, top_k)
     top_idx = np.argsort(similarities)[::-1][:top_k]
@@ -80,6 +82,8 @@ if prompt:
     if active_category and categories:
         user_embedding = model.encode([prompt], convert_to_tensor=True)
         similarities = util.cos_sim(user_embedding, question_embeddings).flatten()
+        # Convert to numpy array to avoid tensor issues
+        similarities = similarities.cpu().numpy()
         mask = np.array([1.0 if categories[i] == active_category else 0.0 for i in range(len(answers))], dtype=float)
         similarities = similarities * mask
         # Ensure top_k is at least 1
