@@ -6,3 +6,4 @@ rouge-score
 nltk
 sentence-transformers
 torch
+tensorflow

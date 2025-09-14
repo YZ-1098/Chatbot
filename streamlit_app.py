@@ -1,20 +1,25 @@
 import os
 import pickle
 from typing import List, Tuple, Optional
+import random
 
 import numpy as np
 import streamlit as st
 from sentence_transformers import SentenceTransformer, util
+from tensorflow.keras.models import load_model
 
 
 @st.cache_resource(show_spinner=False)
 def load_artifacts():
     base_dir = os.path.dirname(__file__)
+    
+    # Load SentenceTransformer artifacts
     model = SentenceTransformer(os.path.join(base_dir, "sbert_model"))
     with open(os.path.join(base_dir, "qa_embeddings.pkl"), "rb") as f:
         question_embeddings = pickle.load(f)
     with open(os.path.join(base_dir, "qa_answers.pkl"), "rb") as f:
         answers = pickle.load(f)
+    
     # Optional artifacts
     questions: Optional[List[str]] = None
     categories: Optional[List[str]] = None
@@ -26,7 +31,24 @@ def load_artifacts():
     if os.path.exists(c_path):
         with open(c_path, "rb") as f:
             categories = pickle.load(f)
-    return model, question_embeddings, answers, questions, categories
+    
+    # Load TensorFlow artifacts if available
+    tf_model = None
+    tf_vectorizer = None
+    tf_label_encoder = None
+    tf_responses = None
+    
+    tf_model_path = os.path.join(base_dir, "tensorflow_model")
+    if os.path.exists(tf_model_path):
+        tf_model = load_model(tf_model_path)
+        with open(os.path.join(base_dir, "tf_vectorizer.pkl"), "rb") as f:
+            tf_vectorizer = pickle.load(f)
+        with open(os.path.join(base_dir, "tf_label_encoder.pkl"), "rb") as f:
+            tf_label_encoder = pickle.load(f)
+        with open(os.path.join(base_dir, "tf_responses.pkl"), "rb") as f:
+            tf_responses = pickle.load(f)
+    
+    return model, question_embeddings, answers, questions, categories, tf_model, tf_vectorizer, tf_label_encoder, tf_responses
 
 
 def retrieve_top_k(user_text: str, model, question_embeddings, answers: List[str], top_k: int) -> List[Tuple[str, float, int]]:
@@ -42,6 +64,26 @@ def retrieve_top_k(user_text: str, model, question_embeddings, answers: List[str
         results.append((answers[idx], float(similarities[idx]), int(idx)))
     return results
 
+def tensorflow_predict(user_text: str, tf_model, tf_vectorizer, tf_label_encoder, tf_responses) -> Tuple[str, float]:
+    """Predict using TensorFlow model"""
+    if tf_model is None or tf_vectorizer is None or tf_label_encoder is None or tf_responses is None:
+        return "TensorFlow model not available", 0.0
+    
+    # Vectorize input
+    bow = tf_vectorizer.transform([user_text]).toarray()
+    
+    # Predict
+    pred = tf_model.predict(bow, verbose=0)[0]
+    confidence = float(np.max(pred))
+    
+    # Get intent
+    intent = tf_label_encoder.inverse_transform([np.argmax(pred)])[0]
+    
+    # Get random response for this intent
+    response = random.choice(tf_responses[intent])
+    
+    return response, confidence
+
 
 st.set_page_config(page_title="FAQ Chatbot", page_icon="💬", layout="centered")
 
@@ -49,7 +91,7 @@ st.title("💬 University FAQ Chatbot")
 st.caption("Multi-Algorithm Chatbot for Group Assignment - Compare different NLP approaches!")
 
 
-model, question_embeddings, answers, questions, categories = load_artifacts()
+model, question_embeddings, answers, questions, categories, tf_model, tf_vectorizer, tf_label_encoder, tf_responses = load_artifacts()
 
 with st.sidebar:
     st.header("Settings")
@@ -92,8 +134,12 @@ if prompt:
         if yong_candidates:
             all_results["Yong Zheng (Deep Learning)"] = yong_candidates[0]  # Get best result
         
-        # Ew Chiu Linn's results (placeholder)
-        all_results["Ew Chiu Linn"] = ("Algorithm not implemented yet", 0.0, -1)
+        # Ew Chiu Linn's TensorFlow results
+        if tf_model is not None:
+            tf_response, tf_confidence = tensorflow_predict(prompt, tf_model, tf_vectorizer, tf_label_encoder, tf_responses)
+            all_results["Ew Chiu Linn (TensorFlow)"] = (tf_response, tf_confidence, -1)
+        else:
+            all_results["Ew Chiu Linn (TensorFlow)"] = ("TensorFlow model not trained yet", 0.0, -1)
         
         # Chong Yee Yang's results (placeholder)
         all_results["Chong Yee Yang"] = ("Algorithm not implemented yet", 0.0, -1)
@@ -133,9 +179,13 @@ if prompt:
         candidates = retrieve_top_k(prompt, model, question_embeddings, answers, top_k=top_k)
     
     elif active_algorithm == "Ew Chiu Linn":
-        # Placeholder for Ew Chiu Linn's implementation
-        st.warning("🚧 Ew Chiu Linn's algorithm implementation not yet available. Please implement this algorithm.")
-        candidates = []
+        # Ew Chiu Linn's TensorFlow implementation
+        if tf_model is not None:
+            tf_response, tf_confidence = tensorflow_predict(prompt, tf_model, tf_vectorizer, tf_label_encoder, tf_responses)
+            candidates = [(tf_response, tf_confidence, -1)]
+        else:
+            st.warning("🚧 TensorFlow model not trained yet. Run 'python train_tensorflow.py' first.")
+            candidates = []
     
     elif active_algorithm == "Chong Yee Yang":
         # Placeholder for Chong Yee Yang's implementation
