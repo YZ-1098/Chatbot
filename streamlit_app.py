@@ -108,22 +108,6 @@ if prompt:
                 else:
                     st.markdown(f"**{member}:** {answer}")
                 st.markdown("---")
-            
-            # Show candidates if enabled
-            if show_candidates and yong_candidates:
-                with st.expander("View all candidates from implemented algorithms"):
-                    st.markdown("**Yong Zheng (Deep Learning) candidates:**")
-                    for ans, score, idx in yong_candidates:
-                        meta = []
-                        if questions and 0 <= idx < len(questions):
-                            meta.append(f"Q: {questions[idx]}")
-                        if categories and 0 <= idx < len(categories) and categories[idx]:
-                            meta.append(f"Category: {categories[idx]}")
-                        st.write(f"Score: {score:.3f} | idx: {idx}")
-                        if meta:
-                            st.caption(" | ".join(meta))
-                        st.text(ans)
-                        st.markdown("---")
         
         # Use the best overall result for rating purposes
         candidates = yong_candidates if yong_candidates else []
