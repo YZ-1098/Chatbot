@@ -32,6 +32,8 @@ def load_artifacts():
 def retrieve_top_k(user_text: str, model, question_embeddings, answers: List[str], top_k: int) -> List[Tuple[str, float, int]]:
     user_embedding = model.encode([user_text], convert_to_tensor=True)
     similarities = util.cos_sim(user_embedding, question_embeddings).flatten()
+    # Ensure top_k is at least 1
+    top_k = max(1, top_k)
     top_idx = np.argsort(similarities)[::-1][:top_k]
     results: List[Tuple[str, float, int]] = []
     for idx in top_idx:
@@ -80,15 +82,22 @@ if prompt:
         similarities = util.cos_sim(user_embedding, question_embeddings).flatten()
         mask = np.array([1.0 if categories[i] == active_category else 0.0 for i in range(len(answers))], dtype=float)
         similarities = similarities * mask
-        order = np.argsort(similarities)[::-1][:top_k]
+        # Ensure top_k is at least 1
+        safe_top_k = max(1, top_k)
+        order = np.argsort(similarities)[::-1][:safe_top_k]
         candidates = [(answers[i], float(similarities[i]), int(i)) for i in order]
     else:
         candidates = retrieve_top_k(prompt, model, question_embeddings, answers, top_k=top_k)
-    best_answer, best_score, _ = candidates[0]
-    if best_score < threshold:
-        reply = "I’m not sure yet. Could you rephrase or ask something else?"
+    
+    # Safety check: ensure we have at least one candidate
+    if not candidates:
+        reply = "I'm not sure yet. Could you rephrase or ask something else?"
     else:
-        reply = best_answer
+        best_answer, best_score, _ = candidates[0]
+        if best_score < threshold:
+            reply = "I'm not sure yet. Could you rephrase or ask something else?"
+        else:
+            reply = best_answer
 
     with st.chat_message("assistant"):
         st.markdown(reply)
