@@ -65,10 +65,6 @@ with st.sidebar:
 
 if "history" not in st.session_state:
     st.session_state.history = []  # list of (role, text)
-if "ratings" not in st.session_state:
-    st.session_state.ratings = []  # list of dicts {turn, prompt, reply, score}
-if "algorithm_stats" not in st.session_state:
-    st.session_state.algorithm_stats = {}  # track algorithm usage and performance
 
 for role, text in st.session_state.history:
     with st.chat_message(role):
@@ -168,62 +164,7 @@ if prompt:
 
         st.session_state.history.append(("assistant", reply))
 
-    # Usability rating UI per assistant reply
-    with st.container(border=True):
-        st.write("Rate this response (1=poor, 5=excellent):")
-        col1, col2 = st.columns([1, 3])
-        with col1:
-            rating = st.slider("Rating", 1, 5, 4, 1, key=f"rate_{len(st.session_state.history)}")
-        with col2:
-            feedback = st.text_input("Optional feedback", key=f"fb_{len(st.session_state.history)}")
-        if st.button("Submit rating", key=f"submit_{len(st.session_state.history)}"):
-            rating_data = {
-                "turn": len(st.session_state.history),
-                "prompt": prompt,
-                "reply": reply,
-                "score": int(rating),
-                "feedback": feedback,
-                "algorithm": current_algorithm,
-                "best_score": best_score if candidates else 0.0
-            }
-            st.session_state.ratings.append(rating_data)
-            
-            # Track algorithm stats
-            if current_algorithm not in st.session_state.algorithm_stats:
-                st.session_state.algorithm_stats[current_algorithm] = {"count": 0, "total_score": 0}
-            st.session_state.algorithm_stats[current_algorithm]["count"] += 1
-            st.session_state.algorithm_stats[current_algorithm]["total_score"] += int(rating)
-            
-            st.success("Thanks for your rating!")
-
 st.markdown("\n\n")
 st.caption("Tip: adjust the threshold if responses feel too generic or too strict.")
-
-# Show algorithm comparison stats
-if st.session_state.ratings:
-    st.markdown("---")
-    st.subheader("📊 Algorithm Performance Comparison")
-    
-    # Overall stats
-    scores = [r["score"] for r in st.session_state.ratings]
-    avg = sum(scores) / len(scores)
-    st.markdown(f"**Overall Average Rating:** {avg:.2f} (n={len(scores)})")
-    
-    # Algorithm-specific stats
-    if st.session_state.algorithm_stats:
-        st.markdown("**Algorithm Performance:**")
-        for algo, stats in st.session_state.algorithm_stats.items():
-            if stats["count"] > 0:
-                avg_score = stats["total_score"] / stats["count"]
-                st.markdown(f"• **{algo}**: {avg_score:.2f} (n={stats['count']})")
-    
-    # Show recent ratings
-    if len(st.session_state.ratings) > 0:
-        with st.expander("View Recent Ratings"):
-            for i, rating in enumerate(st.session_state.ratings[-5:]):  # Show last 5
-                st.write(f"**Turn {rating['turn']}** - {rating['algorithm']} - Score: {rating['score']}/5")
-                if rating['feedback']:
-                    st.caption(f"Feedback: {rating['feedback']}")
-                st.markdown("---")
 
 
