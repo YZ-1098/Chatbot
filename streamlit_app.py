@@ -182,5 +182,3 @@ if prompt:
 
 st.markdown("\n\n")
 st.caption("Tip: adjust the threshold if responses feel too generic or too strict.")
-
-
