@@ -19,9 +19,9 @@ except Exception:
     rouge_scorer = None
 
 # -------------------------
-# Load UniversityFAQ.json
+# Load intents.json
 # -------------------------
-def read_university_faq_json(json_path: str) -> Tuple[List[str], List[str], Optional[List[str]]]:
+def read_intents_json(json_path: str) -> Tuple[List[str], List[str], Optional[List[str]]]:
     questions, answers, categories = [], [], []
     with open(json_path, encoding='utf-8') as f:
         data = json.load(f)
@@ -147,11 +147,11 @@ def evaluate_generation(questions: List[str], gold_answers: List[str], model, qu
 
 
 if __name__ == "__main__":
-    if not os.path.exists("UniversityFAQ.json"):
-        raise FileNotFoundError("UniversityFAQ.json not found")
+    if not os.path.exists("intents.json"):
+        raise FileNotFoundError("intents.json not found")
 
     # Training phase
-    questions, answers, categories = read_university_faq_json("UniversityFAQ.json")
+    questions, answers, categories = read_intents_json("intents.json")
     model, embeddings = train_embeddings(questions)
     save_artifacts(model, embeddings, answers, questions, categories)
     print(f"Trained deep learning retriever on {len(questions)} Q/A pairs and saved artifacts.")
